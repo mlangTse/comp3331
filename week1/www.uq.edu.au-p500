@@ -1,55 +1,8 @@
 PING www.uq.edu.au (130.102.184.3) 472(500) bytes of data.
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=1 ttl=238 time=17.5 ms
+480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=1 ttl=238 time=17.4 ms
 480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=2 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=3 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=4 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=5 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=6 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=7 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=8 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=9 ttl=238 time=17.6 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=10 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=11 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=12 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=13 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=14 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=15 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=16 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=17 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=18 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=19 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=20 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=21 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=22 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=23 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=24 ttl=238 time=19.9 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=25 ttl=238 time=19.8 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=26 ttl=238 time=17.2 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=27 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=28 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=29 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=30 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=31 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=32 ttl=238 time=18.0 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=33 ttl=238 time=17.2 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=34 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=35 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=36 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=37 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=38 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=39 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=40 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=41 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=42 ttl=238 time=17.6 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=43 ttl=238 time=17.4 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=44 ttl=238 time=17.6 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=45 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=46 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=47 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=48 ttl=238 time=17.3 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=49 ttl=238 time=17.5 ms
-480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=50 ttl=238 time=17.5 ms
+480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=3 ttl=238 time=17.2 ms
 
 --- www.uq.edu.au ping statistics ---
-50 packets transmitted, 50 received, 0% packet loss, time 49069ms
-rtt min/avg/max/mdev = 17.280/17.562/19.996/0.500 ms
+3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+rtt min/avg/max/mdev = 17.238/17.380/17.474/0.102 ms
