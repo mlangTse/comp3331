@@ -32,6 +32,14 @@ class Client():
             'SHT': self.SHT,
         }
 
+    def threadExist(self):
+        if not os.path.exists(self.request['thread']):
+            message = 'Thread ' + self.request['thread'] + ' not exists'
+            print(message)
+            self.conn.send(bytes(message, encoding='utf-8'))
+            return False
+        return True
+
     def CRT(self):
         global thread
         if os.path.exists(self.request['name']):
@@ -42,17 +50,13 @@ class Client():
 
         with open(self.request['name'], 'w') as f:
             f.write(self.username)
-            f.close
+
         thread.append(self.request['name'])
         message = 'Thread ' + self.request['name'] + ' created'
         self.conn.send(bytes(message, encoding='utf-8'))
 
     def MSG(self):
-        if not os.path.exists(self.request['thread']):
-            message = 'Thread ' + self.request['thread'] + ' not exists'
-            print(message)
-            self.conn.send(bytes(message, encoding='utf-8'))
-            return
+        if not self.threadExist(): return
 
         def file_len(fname):
             with open(fname) as f:
@@ -63,17 +67,42 @@ class Client():
         with open(self.request['thread'], 'a') as f:
             l = file_len(self.request['thread'])
             f.write('\n' + l + ' ' + self.username + ': ' + self.request['message'])
-            f.close
 
         message = 'Message posted to ' + self.request['thread'] + ' thread'
         print(message)
         self.conn.send(bytes(message, encoding='utf-8'))
 
     def DLT(self):
-        pass
+        if not self.threadExist(): return
+
+        messNum = int(self.request['message_number'])
+        with open(self.request['thread'], 'r') as f:
+            lines = f.readlines()
+
+        if messNum > len(lines):
+            print('Message cannot be deleted')
+            message = 'Invalid message number'
+            self.conn.send(bytes(message, encoding='utf-8'))
+            return
+
+        if lines[messNum][2:2+len(self.username)] != self.username:
+            print('Message cannot be deleted')
+            message = 'The message belongs to another user and cannot be edited'
+            self.conn.send(bytes(message, encoding='utf-8'))
+            return
+
+        del lines[messNum]
+        for i in range(messNum, len(lines)):
+            lines[i] = str(i) + lines[i][1:]
+        out = open(self.request['thread'], 'w')
+        out.writelines(lines)
+        out.close()
+        message = 'Message has been deleted'
+        print(message)
+        self.conn.send(bytes(message, encoding='utf-8'))
 
     def EDT(self):
-        pass
+        if not self.threadExist(): return
 
     def LST(self):
         global thread

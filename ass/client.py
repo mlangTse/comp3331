@@ -48,7 +48,11 @@ class CommHandle():
         print(self.recvData)
 
     def DLT(self, args):
-        sendMessage(self.clientSocket, 'DLT')
+        if len(args) < 2:
+            print('Invalid command')
+            return
+
+        sendMessage(self.clientSocket, 'DLT', 'thread', args[0], 'message_number', args[1])
         self.recv()
         print(self.recvData)
 
@@ -109,6 +113,7 @@ def sendMessage(clientSocket, Mtype, Mname=None, Message=None, Mname2=None, Mess
 
 def login(clientSocket):
     username = input('Enter username: ')
+    username = username.strip()
     sendMessage(clientSocket, 'login-N', 'username', username)
 
     while True:
@@ -176,4 +181,3 @@ if __name__ == "__main__":
 
     POST = int(sys.argv[2])
     client()
-
