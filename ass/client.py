@@ -2,10 +2,13 @@
 import sys
 import os
 from socket import *
+from _thread import start_new_thread, exit
 from json import dumps, loads
+from time import sleep
 
 HOST = gethostbyname(gethostname())
 PORT = 12345
+UserName = None
 
 class CommHandle():
     def __init__(self, clientSocket):
@@ -26,7 +29,14 @@ class CommHandle():
         }
 
     def recv(self):
-        self.recvData = self.clientSocket.recv(2048).decode('utf-8')
+        self.recvData = self.clientSocket.recv(1024).decode('utf-8')
+        if self.recvData == 'Goodbye. Server shutting down\n>':
+            print(self.recvData, end='')
+            self.recvData = 'Goodbye'
+            return
+
+        if self.recvData[0] in ['{', '[']: return
+        print(self.recvData)
 
     def CRT(self, args):
         if len(args) != 1:
@@ -34,8 +44,6 @@ class CommHandle():
             return
 
         sendMessage(self.clientSocket, 'CRT', 'name', args[0])
-        self.recv()
-        print(self.recvData)
 
     def MSG(self, args):
         if len(args) < 2:
@@ -44,8 +52,6 @@ class CommHandle():
 
         message = ' '.join(args[1:])
         sendMessage(self.clientSocket, 'MSG', 'thread', args[0], 'message', message)
-        self.recv()
-        print(self.recvData)
 
     def DLT(self, args):
         if len(args) < 2:
@@ -53,68 +59,123 @@ class CommHandle():
             return
 
         sendMessage(self.clientSocket, 'DLT', 'thread', args[0], 'message_number', args[1])
-        self.recv()
-        print(self.recvData)
 
     def EDT(self, args):
-        sendMessage(self.clientSocket, 'EDT')
-        self.recv()
-        print(self.recvData)
+        if len(args) < 3:
+            print('Invalid command')
+            return
+
+        sendMessage(self.clientSocket, 'EDT', 'thread', args[0], 'message_number', args[1], 'message', args[2])
 
     def LST(self, args):
         sendMessage(self.clientSocket, 'LST')
-        self.recv()
+        sleep(0.1)
         self.recvData = loads(self.recvData)
         if not self.recvData:
             print('No threads to list')
             return
 
         print('The list of active threads:')
-        for i in self.recvData:
+        for i in self.recvData.keys():
             print(i)
 
     def RDT(self, args):
-        sendMessage(self.clientSocket, 'RDT')
-        self.recv()
-        print(self.recvData)
+        if len(args) != 1:
+            print('Invalid command')
+            return
+
+        sendMessage(self.clientSocket, 'RDT', 'thread', args[0])
+        sleep(0.1)
+        self.recvData = loads(self.recvData)
+        if not self.recvData[1:]:
+            print('Thread', args[0], 'is empty')
+            return
+
+        for i in self.recvData[1:]:
+            print(i)
 
     def UPD(self, args):
-        sendMessage(self.clientSocket, 'UPD')
-        self.recv()
-        print(self.recvData)
+        global UserName
+        if len(args) < 2:
+            print('Invalid command')
+            return
+
+        sendMessage(self.clientSocket, 'UPD', 'thread', args[0])
+        if not os.path.exists(args[1]): return
+        filesize = os.stat(args[1]).st_size
+        if self.recvData == '{OK':
+            sendMessage(self.clientSocket, 'UPD', 'username', UserName, 'filename', args[1], 'filesize', filesize)
+
+        if self.recvData == '{OK':
+            print('hi')
+            with open(args[1], 'r') as f:
+                sent = 0
+                while sent != filesize:
+                    data = f.read(1024)
+                    self.clientSocket.sendall(bytes(data, encoding='utf-8'))
+                    sent += len(data)
 
     def DWN(self, args):
         sendMessage(self.clientSocket, 'DWN')
-        self.recv()
-        print(self.recvData)
 
     def RMV(self, args):
-        sendMessage(self.clientSocket, 'RMV')
-        self.recv()
-        print(self.recvData)
+        if len(args) != 1:
+            print('Invalid command')
+            return
+
+        sendMessage(self.clientSocket, 'RMV', 'thread', args[0])
+        sleep(0.1)
 
     def XIT(self, args):
         sendMessage(self.clientSocket, 'XIT')
-        self.recv()
-        print(self.recvData)
 
     def SHT(self, args):
-        sendMessage(self.clientSocket, 'SHT')
-        self.recv()
-        print(self.recvData)
+        if len(args) != 1:
+            print('Invalid command')
+            return
 
-def sendMessage(clientSocket, Mtype, Mname=None, Message=None, Mname2=None, Message2=None):
+        sendMessage(self.clientSocket, 'SHT', 'AdmPassword', args[0])
+
+def closeConn(clientSocket, Handler):
+    while Handler.recvData != 'Goodbye':
+        try:
+            Handler.recv()
+        except Exception:
+            break
+
+def getCommand(Handler):
+    commandList = ['CRT', 'MSG', 'DLT', 'EDT', 'LST', 'RDT', 'UPD', 'DWN', 'RMV', 'XIT', 'SHT']
+
+    while Handler.recvData != 'Goodbye':
+        command = input(f'Enter one of the following commands: '+' '.join(commandList))
+
+        if not command: return
+        command = command.strip().split(' ')
+
+        commandType = command[0]
+
+        if commandType not in Handler.executeComm.keys():
+            print('Invalid command')
+            continue
+
+        Handler.executeComm[commandType](command[1:])
+        sleep(0.2)
+
+def sendMessage(clientSocket, *args):
     message = {
-        'type': Mtype,
-        f'{Mname}': Message,
-        f'{Mname2}': Message2,
+        'type': args[0]
     }
-    clientSocket.send(bytes(dumps(message), encoding='utf-8'))
+
+    for i in range(1, len(args[1:]), 2):
+        message[f'{args[i]}'] = args[i+1]
+
+    clientSocket.sendall(bytes(dumps(message), encoding='utf-8'))
 
 def login(clientSocket):
-    username = input('Enter username: ')
-    username = username.strip()
-    sendMessage(clientSocket, 'login-N', 'username', username)
+    global UserName
+    UserName = input('Enter username: ')
+    UserName = UserName.strip()
+    sendMessage(clientSocket, 'login-N', 'username', UserName)
 
     while True:
         recvData = clientSocket.recv(1024).decode('utf-8')
@@ -127,12 +188,12 @@ def login(clientSocket):
             break
         elif recvData == 'N':
             print('Invalid password')
-            username = input('Enter username: ')
-            sendMessage(clientSocket, 'login-N', 'username', username)
+            UserName = input('Enter username: ')
+            sendMessage(clientSocket, 'login-N', 'username', UserName)
         elif recvData[:2] == 'LD':
             print(recvData[2:],' has already logged in')
-            username = input('Enter username: ')
-            sendMessage(clientSocket, 'login-N', 'username', username)
+            UserName = input('Enter username: ')
+            sendMessage(clientSocket, 'login-N', 'username', UserName)
         elif recvData == 'PWD':
             pwd = input(f'Enter password: ')
             sendMessage(clientSocket, 'login-P', 'password', pwd)
@@ -153,20 +214,13 @@ def client():
     # login in to the server
     login(clientSocket)
 
-    commandList = ['CRT', 'MSG', 'DLT', 'EDT', 'LST', 'RDT', 'UPD', 'DWN', 'RMV', 'XIT', 'SHT']
-
     # get command from the user
     Handler = CommHandle(clientSocket)
+    start_new_thread(closeConn, (clientSocket, Handler,))
+    start_new_thread(getCommand, (Handler,))
+
     while Handler.recvData != 'Goodbye':
-        command = input(f'Enter one of the following commands: '+' '.join(commandList))
-
-        command = command.split(' ')
-
-        commandType = command[0]
-        if commandType not in Handler.executeComm.keys():
-            print('Invalid command')
-            continue
-        Handler.executeComm[commandType](command[1:])
+        continue
 
     clientSocket.close()
 
