@@ -14,6 +14,7 @@ class CommHandle():
     def __init__(self, clientSocket):
         self.clientSocket = clientSocket
         self.recvData = None
+        self.notPrint = False
         self.executeComm = {
             'CRT': self.CRT,
             'MSG': self.MSG,
@@ -29,6 +30,7 @@ class CommHandle():
         }
 
     def recv(self):
+        if self.notPrint: return
         self.recvData = self.clientSocket.recv(1024).decode('utf-8')
         if self.recvData == 'Goodbye. Server shutting down\n>':
             print(self.recvData, end='')
@@ -85,14 +87,14 @@ class CommHandle():
             return
 
         sendMessage(self.clientSocket, 'RDT', 'thread', args[0])
-        sleep(0.1)
+        sleep(0.01)
         self.recvData = loads(self.recvData)
         if not self.recvData[1:]:
             print('Thread', args[0], 'is empty')
             return
 
         for i in self.recvData[1:]:
-            print(i)
+            print(i.strip('\n'))
 
     def UPD(self, args):
         global UserName
@@ -100,23 +102,54 @@ class CommHandle():
             print('Invalid command')
             return
 
-        sendMessage(self.clientSocket, 'UPD', 'thread', args[0])
-        if not os.path.exists(args[1]): return
-        filesize = os.stat(args[1]).st_size
-        if self.recvData == '{OK':
-            sendMessage(self.clientSocket, 'UPD', 'username', UserName, 'filename', args[1], 'filesize', filesize)
+        if not os.path.exists(args[1]):
+            print(f'File \'{args[1]}\' does not exist')
+            return
 
-        if self.recvData == '{OK':
-            print('hi')
-            with open(args[1], 'r') as f:
-                sent = 0
-                while sent != filesize:
-                    data = f.read(1024)
-                    self.clientSocket.sendall(bytes(data, encoding='utf-8'))
-                    sent += len(data)
+        sendMessage(self.clientSocket, 'UPD', 'thread', args[0])
+        sleep(0.01)
+        filesize = os.stat(args[1]).st_size
+        if self.recvData != '{OK': return
+        self.recvData = ''
+        sendMessage(self.clientSocket, 'UPD', 'username', UserName, 'filename', args[1], 'filesize', filesize)
+
+        # wait for server's response
+        sleep(0.2)
+
+        if self.recvData != '{OK': return
+        with open(args[1], 'rb') as f:
+            sent = 0
+            while sent != filesize:
+                data = f.read(1024)
+                self.clientSocket.sendall(data)
+                sleep(0.01)
+                sent += len(data)
 
     def DWN(self, args):
-        sendMessage(self.clientSocket, 'DWN')
+        global UserName
+        if len(args) < 2:
+            print('Invalid command')
+            return
+
+        thread_name = args[0]
+        filename = args[1]
+        sendMessage(self.clientSocket, 'DWN', 'thread', thread_name, 'filename', filename)
+        sleep(0.1)
+
+        if self.recvData.startswith('File'): return
+        self.recvData = loads(self.recvData)
+        filesize = self.recvData['filesize']
+        self.notPrint = True
+        sleep(0.1)
+
+        with open(filename, 'wb') as f:
+            received = 0
+            while received != filesize:
+                data = self.clientSocket.recv(1024)
+                f.write(data)
+                received += len(data)
+
+        self.notPrint = False
 
     def RMV(self, args):
         if len(args) != 1:
@@ -149,12 +182,12 @@ def getCommand(Handler):
     while Handler.recvData != 'Goodbye':
         command = input(f'Enter one of the following commands: '+' '.join(commandList))
 
-        if not command: return
-        command = command.strip().split(' ')
+        command = command.strip()
+        command = command.split(' ')
 
         commandType = command[0]
 
-        if commandType not in Handler.executeComm.keys():
+        if commandType not in Handler.executeComm.keys() or not command:
             print('Invalid command')
             continue
 

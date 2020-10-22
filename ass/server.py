@@ -48,6 +48,7 @@ class Client():
         return True
 
     def HasPremission(self, msg):
+        global threads
         messNum = int(self.request['message_number'])
         with open(self.request['thread'], 'r') as f:
             lines = f.readlines()
@@ -58,11 +59,14 @@ class Client():
             self.sendMessage(message)
             return False
 
-        if lines[messNum][2:2+len(self.username)] != self.username:
-            print('Message cannot be ', msg)
-            message = 'The message belongs to another user and cannot be ' + msg
-            self.sendMessage(message)
-            return False
+        for i in range(1, messNum+1):
+            if i in threads[self.request['thread']]['files_index']: continue
+            if int(lines[i][0]) != messNum: continue
+            if lines[messNum][2:2+len(self.username)] != self.username:
+                print('Message cannot be ', msg)
+                message = 'The message belongs to another user and cannot be ' + msg
+                self.sendMessage(message)
+                return False
         return True
 
     def sendMessage(self, msg):
@@ -82,7 +86,8 @@ class Client():
 
         threads[self.request['name']] = {
             'cur_index': 1,
-            'files': []
+            'files': [],
+            'files_index': []
         }
 
         message = 'Thread ' + self.request['name'] + ' created'
@@ -108,24 +113,38 @@ class Client():
 
         if not self.HasPremission('deleted'): return
 
+        cur_thread = threads[self.request['thread']]
         # delete message
         messNum = int(self.request['message_number'])
         with open(self.request['thread'], 'r') as f:
             lines = f.readlines()
 
-        if len(lines) == 2:
-            lines = lines[0].strip('\n')
-        else:
-            del lines[messNum]
+        line_index = 0
+        for i in range(1, len(lines)):
+            if lines[i][0] == str(messNum):
+                del lines[i]
+                line_index = i
+                break
 
-        for i in range(messNum, len(lines)):
-            lines[i] = str(i) + lines[i][1:]
+        if len(lines) == 1:
+            lines = lines[0].strip('\n')
+
+        for i in range(len(cur_thread['files_index'])):
+            if cur_thread['files_index'][i] > line_index:
+                cur_thread['files_index'][i] -= 1
+
+        for i in range(1, len(lines)):
+            if i in cur_thread['files_index']: continue
+            if int(lines[i][0]) > messNum:
+                print(i, lines[i][0])
+                lines[i] = str(int(lines[i][0])-1) + lines[i][1:]
+
         out = open(self.request['thread'], 'w')
         out.writelines(lines)
         out.close()
 
         # updata index
-        threads[self.request['thread']]['cur_index'] -= 1
+        cur_thread['cur_index'] -= 1
         message = 'Message has been deleted'
         self.sendMessage(message)
         print(message)
@@ -170,32 +189,33 @@ class Client():
         thread_name = self.request['thread']
         if not self.threadExist(): return
         else:
-            # get username and filename
+            # request username and filename
             self.sendMessage('{OK')
             sleep(0.01)
 
-        data = self.conn.recv(1024)
-        print(data)
-        self.request = loads(data.decode('utf-8'))
-        print(self.request)
+        # get username and filename
+        self.request = loads(self.conn.recv(1024).decode('utf-8'))
         filename = self.request['filename']
         username = self.request['username']
         filesize = int(self.request['filesize'])
+
         if self.ExistFile(thread_name, filename):
             message = filename + ' already exist in Thread ' + thread_name
             self.sendMessage(message)
             print(message)
             return
 
-        # get file's content
+        # request file's content
         self.sendMessage('{OK')
         sleep(0.01)
 
-        with open(thread_name, 'w') as f:
-            f.write(f'{username} uploaded {filename}')
+        with open(thread_name, 'a') as f:
+            f.write(f'\n{username} uploaded {filename}')
 
+        with open(thread_name, 'r') as f:
+            lines = f.readlines()
 
-        with open(f'{thread_name}-{filename}', 'w') as f:
+        with open(f'{thread_name}-{filename}', 'wb') as f:
             received = 0
             while received != filesize:
                 data = self.conn.recv(1024)
@@ -203,12 +223,42 @@ class Client():
                 received += len(data)
 
         threads[thread_name]['files'].append(filename)
+        threads[thread_name]['files_index'].append(len(lines)-1)
         message = filename + ' uploaded to ' + thread_name + ' thread'
         print(username, 'uploaded file', filename, 'to', thread_name, 'thread')
         self.sendMessage(message)
 
     def DWN(self):
-        pass
+        if not self.threadExist(): return
+        thread_name = self.request['thread']
+        filename = self.request['filename']
+        if not self.ExistFile(thread_name, filename):
+            message = f'does not exist in Thread {thread_name}'
+            self.sendMessage('File '+message)
+            print(filename, message)
+            return
+
+        filesize = os.stat(f'{thread_name}-{filename}').st_size
+        message = {
+            'filesize': filesize
+        }
+
+        self.sendMessage(dumps(message))
+        sleep(0.01)
+        self.sendMessage('starting')
+        sleep(0.01)
+
+        with open(f'{thread_name}-{filename}', 'rb') as f:
+            sent = 0
+            while sent != filesize:
+                data = f.read(1024)
+                self.conn.sendall(data)
+                sent += len(data)
+
+        sleep(0.1)
+        message = f'{filename} successfully downloaded'
+        self.sendMessage(message)
+        print(filename, 'downloaded from Thread', thread_name)
 
     def RMV(self):
         global threads
@@ -318,9 +368,7 @@ def ClientThread(conn):
         data = conn.recv(1024)
         if SHUTDOWN:
             break
-        print(f'received: {data}')
         if not data:
-            print('Waiting for clients')
             break
 
         request = loads(data.decode('utf-8'))
