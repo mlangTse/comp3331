@@ -82,7 +82,7 @@ class Client():
             return
 
         with open(self.request['name'], 'w') as f:
-            f.write(self.username)
+            f.write(self.username + '\n')
 
         threads[self.request['name']] = {
             'cur_index': 1,
@@ -100,12 +100,23 @@ class Client():
 
         with open(self.request['thread'], 'a') as f:
             l = threads[self.request['thread']]['cur_index']
-            f.write('\n' + str(l) + ' ' + self.username + ': ' + self.request['message'])
+            f.write(str(l) + ' ' + self.username + ': ' + self.request['message']+'\n')
             threads[self.request['thread']]['cur_index'] += 1
 
         message = 'Message posted to ' + self.request['thread'] + ' thread'
         self.sendMessage(message)
         print(message)
+
+    def find_message(self, messNum):
+        with open(self.request['thread'], 'r') as f:
+            lines = f.readlines()
+
+        line_index = 0
+        for i in range(1, len(lines)):
+            if lines[i][0] == str(messNum) and lines[i][2:2+len(self.username)] == self.username:
+                line_index = i
+                break
+        return lines, line_index
 
     def DLT(self):
         global threads
@@ -116,18 +127,9 @@ class Client():
         cur_thread = threads[self.request['thread']]
         # delete message
         messNum = int(self.request['message_number'])
-        with open(self.request['thread'], 'r') as f:
-            lines = f.readlines()
 
-        line_index = 0
-        for i in range(1, len(lines)):
-            if lines[i][0] == str(messNum):
-                del lines[i]
-                line_index = i
-                break
-
-        if len(lines) == 1:
-            lines = lines[0].strip('\n')
+        lines, line_index = self.find_message(messNum)
+        del lines[line_index]
 
         for i in range(len(cur_thread['files_index'])):
             if cur_thread['files_index'][i] > line_index:
@@ -136,7 +138,6 @@ class Client():
         for i in range(1, len(lines)):
             if i in cur_thread['files_index']: continue
             if int(lines[i][0]) > messNum:
-                print(i, lines[i][0])
                 lines[i] = str(int(lines[i][0])-1) + lines[i][1:]
 
         out = open(self.request['thread'], 'w')
@@ -153,11 +154,12 @@ class Client():
         if not self.threadExist(): return
         if not self.HasPremission('edited'): return
 
-        with open(self.request['thread'], 'r') as f:
-            lines = f.readlines()
-
+        # edit the message
         messNum = int(self.request['message_number'])
-        lines[messNum] = lines[messNum][:3+len(self.username)] + self.request['message'] + '\n'
+        lines, line_index = self.find_message(messNum)
+        lines[line_index] = lines[line_index][:4+len(self.username)] + self.request['message'] + '\n'
+
+        # write it into the file
         out = open(self.request['thread'], 'w')
         out.writelines(lines)
         out.close()
@@ -385,14 +387,14 @@ def server(port):
     global SHUTDOWN
     global TCPserver
     # Get host
-    host = gethostbyname(gethostname())
+    # host = gethostbyname(gethostname())
     # Create a TCP socket
     TCPserver = socket(AF_INET, SOCK_STREAM)
     TCPserver.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
     # Bind the socket to the port
-    print(f'starting up on {host}:{port}')
-    TCPserver.bind((host, port))
+    print(f'starting up on 127.0.0.1:{port}')
+    TCPserver.bind(('127.0.0.1', port))
 
     # Listen for incming connections
     TCPserver.listen(4)

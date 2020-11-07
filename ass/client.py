@@ -6,7 +6,7 @@ from _thread import start_new_thread, exit
 from json import dumps, loads
 from time import sleep
 
-HOST = gethostbyname(gethostname())
+HOST = '127.0.0.1'
 PORT = 12345
 UserName = None
 
@@ -67,7 +67,8 @@ class CommHandle():
             print('Invalid command')
             return
 
-        sendMessage(self.clientSocket, 'EDT', 'thread', args[0], 'message_number', args[1], 'message', args[2])
+        message = ' '.join(args[2:])
+        sendMessage(self.clientSocket, 'EDT', 'thread', args[0], 'message_number', args[1], 'message', message)
 
     def LST(self, args):
         sendMessage(self.clientSocket, 'LST')
@@ -180,7 +181,7 @@ def getCommand(Handler):
     commandList = ['CRT', 'MSG', 'DLT', 'EDT', 'LST', 'RDT', 'UPD', 'DWN', 'RMV', 'XIT', 'SHT']
 
     while Handler.recvData != 'Goodbye':
-        command = input(f'Enter one of the following commands: '+' '.join(commandList))
+        command = input(f'Enter one of the following commands: '+' '.join(commandList)+':\n')
 
         command = command.strip()
         command = command.split(' ')
