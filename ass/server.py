@@ -313,7 +313,7 @@ class Client():
 
         print('Server shutting down\n>', end='')
         TCPserver.close()
-
+        sys.exit()
 
 def signIn(conn, request, client):
     if request['type'] == 'login-N':
@@ -427,7 +427,7 @@ if __name__ == "__main__":
     port = int(sys.argv[1])
     if port not in range(1023, 65537):
         print('port should be a number within [1023, 65536]')
-        exit(1)
+        exit()
 
     AdminPassword = sys.argv[2]
 
