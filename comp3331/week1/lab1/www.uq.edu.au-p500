@@ -1,0 +1,8 @@
+PING www.uq.edu.au (130.102.184.3) 472(500) bytes of data.
+480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=1 ttl=238 time=17.4 ms
+480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=2 ttl=238 time=17.4 ms
+480 bytes from www.uq.edu.au (130.102.184.3): icmp_seq=3 ttl=238 time=17.2 ms
+
+--- www.uq.edu.au ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+rtt min/avg/max/mdev = 17.238/17.380/17.474/0.102 ms
