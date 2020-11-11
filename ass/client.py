@@ -33,7 +33,7 @@ class CommHandle():
         if self.notPrint: return
         self.recvData = self.clientSocket.recv(1024).decode('utf-8')
         if self.recvData == 'Goodbye. Server shutting down\n>':
-            print(self.recvData, end='')
+            print(self.recvData)
             self.recvData = 'Goodbye'
             return
 
