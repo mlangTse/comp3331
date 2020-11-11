@@ -8,6 +8,7 @@ import datetime as dt
 from json import dumps, loads
 from time import sleep
 
+PORT = None
 # Store clients info
 clients = []
 threads = {}
@@ -293,6 +294,7 @@ class Client():
         global SHUTDOWN
         global AdminPassword
         global TCPserver
+        global PORT
         if AdminPassword != self.request['AdmPassword']:
             message = 'Incorrect password'
             print(message)
@@ -313,7 +315,12 @@ class Client():
 
         print('Server shutting down\n>', end='')
         TCPserver.close()
-        sys.exit()
+        # Create a TCP socket
+        clientSocket = socket(AF_INET, SOCK_STREAM)
+
+        # Connect to a TCP server
+        clientSocket.connect(('127.0.0.1', PORT))
+        clientSocket.close()
 
 def signIn(conn, request, client):
     if request['type'] == 'login-N':
@@ -422,10 +429,10 @@ def server(port):
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print('required Server port and Admin password')
-        exit(1)
+        exit()
 
-    port = int(sys.argv[1])
-    if port not in range(1023, 65537):
+    PORT = int(sys.argv[1])
+    if PORT not in range(1023, 65537):
         print('port should be a number within [1023, 65536]')
         exit()
 
@@ -435,4 +442,4 @@ if __name__ == "__main__":
         f.close()
 
     clients = updateClients()
-    server(port)
+    server(PORT)
