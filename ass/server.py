@@ -313,7 +313,7 @@ class Client():
             if not c.logged: continue
             c.sendMessage('Goodbye. Server shutting down\n>')
 
-        print('Server shutting down\n>', end='')
+        print('Server shutting down\n>')
         TCPserver.close()
         # Create a TCP socket
         clientSocket = socket(AF_INET, SOCK_STREAM)
