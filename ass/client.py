@@ -267,5 +267,5 @@ if __name__ == "__main__":
     if IPaddr.lower() != 'localhost':
         HOST = IPaddr
 
-    POST = int(sys.argv[2])
+    PORT = int(sys.argv[2])
     client()
