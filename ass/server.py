@@ -37,29 +37,37 @@ class Client():
             'SHT': self.SHT,
         }
 
+    # check whether the thread exist
     def threadExist(self, msg=None):
         if not os.path.exists(self.request['thread']):
             message = 'Thread ' + self.request['thread'] + ' not exists'
+            
+            # handle different type of message (RDT will have different response)
             if msg:
                 print(msg)
             else:
                 print(message)
+   
             self.conn.send(bytes(message, encoding='utf-8'))
             return False
         return True
 
+    # check whether the client has premission 
+    # to do some action of specific message
     def HasPremission(self, msg):
         global threads
         messNum = int(self.request['message_number'])
         with open(self.request['thread'], 'r') as f:
             lines = f.readlines()
-
+        
+        # check message number
         if messNum >= len(lines):
             print('Message cannot be ', msg)
             message = 'Invalid message number'
             self.sendMessage(message)
             return False
 
+        # check ownership
         for i in range(1, messNum+1):
             if i in threads[self.request['thread']]['files_index']: continue
             if int(lines[i][0]) != messNum: continue
@@ -108,6 +116,7 @@ class Client():
         self.sendMessage(message)
         print(message)
 
+    # find the specific message in a thead
     def find_message(self, messNum):
         with open(self.request['thread'], 'r') as f:
             lines = f.readlines()
@@ -128,14 +137,15 @@ class Client():
         cur_thread = threads[self.request['thread']]
         # delete message
         messNum = int(self.request['message_number'])
-
         lines, line_index = self.find_message(messNum)
         del lines[line_index]
 
+        # update message's number of the other message
         for i in range(len(cur_thread['files_index'])):
             if cur_thread['files_index'][i] > line_index:
                 cur_thread['files_index'][i] -= 1
 
+        # write the message to the thread, with the updated message number
         for i in range(1, len(lines)):
             if i in cur_thread['files_index']: continue
             if int(lines[i][0]) > messNum:
@@ -145,7 +155,7 @@ class Client():
         out.writelines(lines)
         out.close()
 
-        # updata index
+        # updata index (total number of meesage in the thread)
         cur_thread['cur_index'] -= 1
         message = 'Message has been deleted'
         self.sendMessage(message)
@@ -181,6 +191,7 @@ class Client():
         self.sendMessage(dumps(lines))
         print(message)
 
+    # check whethre a file is exist in the server
     def ExistFile(self, thread_name, filename):
         global threads
         if filename not in threads[thread_name]['files']:
@@ -211,23 +222,28 @@ class Client():
         # request file's content
         self.sendMessage('{OK')
         sleep(0.01)
-
-        with open(thread_name, 'a') as f:
-            f.write(f'\n{username} uploaded {filename}')
-
-        with open(thread_name, 'r') as f:
-            lines = f.readlines()
-
+        
+        # start receive file's data from the client
+        # write it in to a file named 'thread_name-filename'
         with open(f'{thread_name}-{filename}', 'wb') as f:
             received = 0
             while received != filesize:
                 data = self.conn.recv(1024)
                 f.write(data)
                 received += len(data)
+        
+        # get lines that is in the thread
+        with open(thread_name, 'r') as f:
+            lines = f.readlines()
 
         threads[thread_name]['files'].append(filename)
         threads[thread_name]['files_index'].append(len(lines)-1)
         message = filename + ' uploaded to ' + thread_name + ' thread'
+        
+        # write the upload success info in the thread
+        with open(thread_name, 'a') as f:
+            f.write(f'\n{username} uploaded {filename}')
+
         print(username, 'uploaded file', filename, 'to', thread_name, 'thread')
         self.sendMessage(message)
 
@@ -235,6 +251,7 @@ class Client():
         if not self.threadExist(): return
         thread_name = self.request['thread']
         filename = self.request['filename']
+
         if not self.ExistFile(thread_name, filename):
             message = f'does not exist in Thread {thread_name}'
             self.sendMessage('File '+message)
@@ -251,6 +268,7 @@ class Client():
         self.sendMessage('starting')
         sleep(0.01)
 
+        # start send file's data to the client
         with open(f'{thread_name}-{filename}', 'rb') as f:
             sent = 0
             while sent != filesize:
@@ -269,15 +287,19 @@ class Client():
         with open(self.request['thread'], 'r') as f:
             head = f.readline()
 
+        # check it the thread is created by the user
         if head[:len(self.username)] != self.username:
             message = 'The thread was created by another user and cannot be removed'
             self.sendMessage(message)
             print('Thread ' + self.request['thread'] + ' cannot be removed')
             return
-
+        
+        # remove the thread
         os.remove(self.request['thread'])
+        # remove all file uploaded in the thread
         for i in threads[self.request['thread']]['files']:
             os.remove(self.request['thread']+'-'+i)
+        
         del threads[self.request['thread']]
         message = 'The thread has been removed'
         self.sendMessage(message)
@@ -303,22 +325,28 @@ class Client():
 
         for i in threads.keys():
             for j in threads[i]['files']:
+                # remove all file
                 os.remove(i+'-'+j)
+            # remove all thread
             os.remove(i)
+        # remove credentials.txt
         os.remove('credentials.txt')
 
         SHUTDOWN = True
 
+        # send a shutdown information to all client
         for c in clients:
             if not c.logged: continue
             c.sendMessage('Goodbye. Server shutting down\n>')
 
         print('Server shutting down\n>')
         TCPserver.close()
+        
         # Create a TCP socket
         clientSocket = socket(AF_INET, SOCK_STREAM)
 
-        # Connect to a TCP server
+        # Connect to t TCP server
+        # Since the server is still accepting a new client
         clientSocket.connect(('127.0.0.1', PORT))
         clientSocket.close()
 
@@ -358,6 +386,7 @@ def signIn(conn, request, client):
 
     return client
 
+# get client's information from credential.txt
 def updateClients():
     global clients
     with open('credentials.txt') as f:
